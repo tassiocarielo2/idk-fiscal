@@ -1,0 +1,81 @@
+name: rls-tests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/rls/**"
+      - ".github/workflows/rls-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/rls/**"
+      - ".github/workflows/rls-tests.yml"
+
+jobs:
+  rls-pgtap:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: supabase/postgres:15.1.0.117
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 2
+          done
+
+      - name: Enable required extensions
+        run: |
+          psql -c "create extension if not exists pgtap;"
+          psql -c "create extension if not exists pgcrypto;"
+          psql -c "create extension if not exists citext;"
+
+      - name: Apply migrations in order
+        run: |
+          set -e
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f"
+            psql -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Run RLS pgTAP suite
+        run: |
+          set -e
+          fail=0
+          for f in $(ls supabase/tests/rls/*.sql | sort); do
+            echo "Running $f"
+            if ! psql -v ON_ERROR_STOP=1 -f "$f"; then
+              fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "One or more RLS test files failed"
+            exit 1
+          fi
