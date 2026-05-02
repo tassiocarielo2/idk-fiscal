@@ -8,7 +8,7 @@ import {
 } from "@/lib/validation/organization";
 
 export type CreateOrganizationResult =
-  | { ok: true; organizationId: string }
+  | { ok: true; organizationId: string; branchId: string }
   | { ok: false; error: string };
 
 export async function createOrganization(
@@ -30,7 +30,7 @@ export async function createOrganization(
     return { ok: false, error: "Sessao expirada. Faca login novamente." };
   }
 
-  const { data: organizationId, error: rpcError } = await supabase.rpc(
+  const { data, error: rpcError } = await supabase.rpc(
     "create_organization_with_owner",
     {
       p_cnpj: parsed.data.cnpj,
@@ -43,7 +43,8 @@ export async function createOrganization(
     },
   );
 
-  if (rpcError || !organizationId) {
+  const row = Array.isArray(data) ? data[0] : data;
+  if (rpcError || !row?.organization_id || !row?.branch_id) {
     console.error("[createOrganization] rpc failed:", rpcError);
     return {
       ok: false,
@@ -54,5 +55,9 @@ export async function createOrganization(
   revalidatePath("/dashboard");
   revalidatePath("/onboarding");
 
-  return { ok: true, organizationId: organizationId as string };
+  return {
+    ok: true,
+    organizationId: row.organization_id as string,
+    branchId: row.branch_id as string,
+  };
 }
