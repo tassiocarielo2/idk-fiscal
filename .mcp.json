@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "scripts\\mcp-supabase.cmd"]
+    }
+  }
+}

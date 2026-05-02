@@ -36,15 +36,23 @@ Os incumbentes do mercado (Qive, Avalara, Jettax, TecnoSpeed, e-Auditoria) têm 
 
 ```
 idk-fiscal/
-├── docs/              Documentação e ADRs (Architecture Decision Records)
-│   └── adr/           Decisões estruturais documentadas
-├── apps/              Aplicações do produto (frontend, backend, workers)
-├── packages/          Bibliotecas compartilhadas entre apps
-├── infra/             Infraestrutura (Supabase migrations, scripts de deploy)
-└── .github/           Workflows e templates do GitHub
+├── docs/                       Documentação e ADRs
+│   └── adr/                    Decisões estruturais documentadas
+├── src/
+│   ├── app/                    Next.js App Router (rotas + layouts)
+│   ├── components/ui/          shadcn/ui
+│   ├── lib/
+│   │   ├── supabase/           Clientes (client/server/proxy)
+│   │   └── validation/         CNPJ + Zod schemas
+│   ├── server/                 Server actions
+│   └── proxy.ts                Next.js proxy (refresh de sessão Supabase)
+├── supabase/migrations/        Migrations SQL versionadas
+├── scripts/                    Wrappers de dev (ex.: MCP Supabase)
+├── .mcp.json                   MCP server do Supabase com escopo de projeto
+└── .github/                    Workflows e templates
 ```
 
-A estrutura segue padrão monorepo. Conforme o produto cresce, cada `app` ou `package` ganha seu próprio `package.json` ou `pyproject.toml`, com gerenciamento via pnpm workspaces (a confirmar em ADR técnica).
+Decisão de Sessão 2: Next.js plano na raiz (não monorepo). ADR-010.
 
 ---
 
@@ -85,11 +93,47 @@ Detalhes do fluxo de trabalho em [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Estado atual
 
-Este repositório está na **Sessão 1 — Infraestrutura de continuidade**. Ainda não há código de produto. As próximas sessões focam em:
+Wave 1.1 entregue: schema multi-tenant aplicado no Supabase, bootstrap Next.js 15 + Supabase Auth, fluxo signup → onboarding (criar org) → dashboard.
 
-- **Sessão 2:** schema Supabase + pipeline de captura NF-e/NFS-e
-- **Sessão 3:** primeiro endpoint de ingestão + autenticação
-- **Sessão 4:** UI mínima para visualização de notas capturadas
+- **Wave 1.2 (próxima):** convites por email, upload de certificado A1 (ADR-008), tabela `organization_branches` (multi-CNPJ).
+- **Wave 1.3:** Vault para senha do certificado, primeiros pilotos.
+
+---
+
+## Setup local
+
+### Pré-requisitos
+
+- Node.js 20+
+- pnpm 9+
+- Conta Supabase com projeto criado
+
+### Passos
+
+1. Instalar dependências:
+   ```bash
+   pnpm install
+   ```
+2. Copiar `.env.example` para `.env.local` e preencher:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (apenas server-side, nunca exposto)
+   - `SUPABASE_ACCESS_TOKEN` (apenas para uso do MCP do Supabase via Claude Code)
+3. Aplicar migrations no projeto Supabase. Duas opções:
+   - **Dashboard:** abrir SQL Editor → colar o conteúdo de `supabase/migrations/0001_init_multitenant.sql` → Run. Repetir para `0002_security_hardening.sql`.
+   - **MCP (Claude Code):** com `SUPABASE_ACCESS_TOKEN` exportado, o `.mcp.json` aponta para o projeto e expõe `apply_migration`.
+4. Rodar dev server:
+   ```bash
+   pnpm dev
+   ```
+5. Acessar http://localhost:3000, criar conta em `/sign-up`, cadastrar primeira organização em `/onboarding`.
+
+### Build de produção
+
+```bash
+pnpm build
+pnpm start
+```
 
 ---
 
