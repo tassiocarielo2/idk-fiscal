@@ -1,0 +1,137 @@
+# ============================================================
+# Node / Next.js
+# ============================================================
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Build output
+.next/
+out/
+build/
+dist/
+
+# Cache
+.turbo/
+.cache/
+.parcel-cache/
+
+# ============================================================
+# Environment / secrets — NUNCA commitar
+# ============================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Certificados digitais (NF-e, NFS-e) — NUNCA commitar
+*.pfx
+*.pem
+*.p12
+*.cer
+*.crt
+*.key
+certificados/
+certificates/
+certs/
+
+# Credenciais
+credenciais/
+secrets/
+*.credentials.json
+
+# ============================================================
+# Supabase
+# ============================================================
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# ============================================================
+# Python (workers, scripts de processamento fiscal)
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Distribuição Python
+*.egg-info/
+*.egg
+
+# ============================================================
+# Logs e debug
+# ============================================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================================================
+# Editor e SO
+# ============================================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Vercel
+# ============================================================
+.vercel/
+
+# ============================================================
+# Testes e coverage
+# ============================================================
+coverage/
+*.lcov
+.nyc_output/
+
+# ============================================================
+# TypeScript
+# ============================================================
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# Arquivos temporários de desenvolvimento
+# ============================================================
+*.tmp
+*.bak
+.scratch/
+playground/
+TODO.local.md
+
+# ============================================================
+# Dados sensíveis de cliente (NUNCA commitar)
+# XMLs de NF-e reais, PDFs de notas, planilhas de cliente
+# ============================================================
+xmls-clientes/
+notas-reais/
+amostras-confidenciais/
+fiscal-data/
+*.xml.real
