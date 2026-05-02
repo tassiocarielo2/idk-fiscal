@@ -160,6 +160,12 @@ alter table public.organization_members
     or role in ('member', 'viewer')
   );
 
+-- Patch B: branch_scope nunca pode ser array vazio (NULL ou array com >=1)
+alter table public.organization_members drop constraint if exists organization_members_branch_scope_nonempty_chk;
+alter table public.organization_members
+  add constraint organization_members_branch_scope_nonempty_chk
+  check (branch_scope is null or array_length(branch_scope, 1) >= 1);
+
 comment on column public.organization_members.branch_scope is
   'NULL = acesso a todas as filiais. Array uuid = restrito as filiais listadas. Owner/admin sempre NULL.';
 
@@ -348,7 +354,17 @@ begin
 
   if v_invite.email <> v_email then
     raise exception 'Email do convite nao corresponde ao usuario logado'
-      using errcode = '28000';
+      using errcode = '42501';
+  end if;
+
+  -- Patch C: bloquear aceite por usuario que ja e owner da org
+  if exists (
+    select 1 from public.organization_members
+     where organization_id = v_invite.organization_id
+       and user_id = v_user_id
+       and role = 'owner'
+  ) then
+    raise exception 'Usuario ja e owner desta organizacao' using errcode = '22023';
   end if;
 
   -- Insere ou atualiza membership
