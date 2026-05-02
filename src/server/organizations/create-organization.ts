@@ -30,40 +30,29 @@ export async function createOrganization(
     return { ok: false, error: "Sessao expirada. Faca login novamente." };
   }
 
-  const { data: org, error: insertOrgError } = await supabase
-    .from("organizations")
-    .insert({ ...parsed.data, created_by: user.id })
-    .select("id")
-    .single();
+  const { data: organizationId, error: rpcError } = await supabase.rpc(
+    "create_organization_with_owner",
+    {
+      p_cnpj: parsed.data.cnpj,
+      p_razao_social: parsed.data.razao_social,
+      p_nome_fantasia: parsed.data.nome_fantasia ?? null,
+      p_regime_tributario: parsed.data.regime_tributario,
+      p_uf: parsed.data.uf,
+      p_inscricao_estadual: parsed.data.inscricao_estadual ?? null,
+      p_inscricao_municipal: parsed.data.inscricao_municipal ?? null,
+    },
+  );
 
-  if (insertOrgError || !org) {
+  if (rpcError || !organizationId) {
+    console.error("[createOrganization] rpc failed:", rpcError);
     return {
       ok: false,
-      error: insertOrgError?.message ?? "Falha ao criar organizacao.",
-    };
-  }
-
-  const { error: insertMemberError } = await supabase
-    .from("organization_members")
-    .insert({
-      organization_id: org.id,
-      user_id: user.id,
-      role: "owner",
-      accepted_at: new Date().toISOString(),
-    });
-
-  if (insertMemberError) {
-    // TODO Wave 1.2: substituir por RPC create_organization_with_owner para
-    // garantir atomicidade real. Hoje fazemos rollback explicito best-effort.
-    await supabase.from("organizations").delete().eq("id", org.id);
-    return {
-      ok: false,
-      error: insertMemberError.message,
+      error: rpcError?.message ?? "Falha ao criar organizacao.",
     };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/onboarding");
 
-  return { ok: true, organizationId: org.id };
+  return { ok: true, organizationId: organizationId as string };
 }
