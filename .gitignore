@@ -38,9 +38,9 @@ dist/
 *.cer
 *.crt
 *.key
-certificados/
-certificates/
-certs/
+/certificados/
+/certificates/
+/certs/
 
 # Credenciais
 credenciais/

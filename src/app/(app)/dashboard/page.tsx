@@ -39,10 +39,47 @@ export default async function DashboardPage() {
           {org?.razao_social} · {org?.regime_tributario} · {org?.uf}
         </p>
       </div>
-      <div className="border border-zinc-900 rounded p-6 text-sm text-zinc-400">
-        Voce esta como{" "}
-        <span className="text-zinc-200 font-medium">{membership.role}</span>.
-        Wave 1.2 trara: convites, upload de certificado A1 e multi-CNPJ.
+      <div className="border border-zinc-900 rounded p-6 text-sm text-zinc-400 flex flex-col gap-3">
+        <span>
+          Voce esta como{" "}
+          <span className="text-zinc-200 font-medium">{membership.role}</span>.
+        </span>
+        <div className="flex gap-3 flex-wrap">
+          <a
+            href="/nfe"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+          >
+            NF-e
+          </a>
+          <a
+            href="/billing"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+          >
+            Plano e cobranca
+          </a>
+          {membership.role === "owner" || membership.role === "admin" ? (
+            <>
+              <a
+                href="/admin/branches"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Filiais
+              </a>
+              <a
+                href="/admin/invites"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Convites
+              </a>
+              <a
+                href="/admin/certificates"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Certificados A1
+              </a>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -51,6 +51,11 @@ export async function createOrganization(
     };
   }
 
+  // Inicia trial 14 dias (idempotente).
+  await supabase.rpc("register_subscription_trial", {
+    p_organization_id: organizationId as string,
+  });
+
   revalidatePath("/dashboard");
   revalidatePath("/onboarding");
 
