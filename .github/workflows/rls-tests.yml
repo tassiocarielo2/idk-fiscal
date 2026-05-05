@@ -1,0 +1,98 @@
+name: RLS tests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - ".github/workflows/rls-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+
+jobs:
+  rls:
+    name: Apply migrations and run RLS suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: supabase/postgres:15.6.1.115
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      PGURL: postgresql://postgres:postgres@localhost:5432/postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 -U postgres; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+
+      - name: Bootstrap auth schema (mock for RLS tests)
+        run: |
+          psql "$PGURL" <<'SQL'
+          create schema if not exists auth;
+          create schema if not exists extensions;
+          create schema if not exists vault;
+
+          -- Stubs minimos para fixtures dos testes
+          create table if not exists auth.users (
+            id uuid primary key,
+            email text,
+            instance_id uuid,
+            aud text,
+            role text,
+            encrypted_password text,
+            email_confirmed_at timestamptz,
+            created_at timestamptz default now(),
+            updated_at timestamptz default now()
+          );
+          create or replace function auth.uid() returns uuid
+          language sql stable as $$
+            select coalesce(
+              nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub',
+              null
+            )::uuid;
+          $$;
+
+          create extension if not exists pgcrypto with schema extensions;
+          create extension if not exists citext   with schema extensions;
+          SQL
+
+      - name: Apply migrations in order
+        run: |
+          for f in supabase/migrations/*.sql; do
+            echo "::group::Applying $f"
+            psql -v ON_ERROR_STOP=1 "$PGURL" -f "$f"
+            echo "::endgroup::"
+          done
+
+      - name: Run RLS test suite
+        run: |
+          set -e
+          fail=0
+          for f in supabase/tests/rls/*.sql; do
+            echo "::group::Running $f"
+            if ! psql -v ON_ERROR_STOP=1 "$PGURL" -f "$f"; then
+              echo "::error::Test failed: $f"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
