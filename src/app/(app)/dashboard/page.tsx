@@ -44,28 +44,36 @@ export default async function DashboardPage() {
           Voce esta como{" "}
           <span className="text-zinc-200 font-medium">{membership.role}</span>.
         </span>
-        {membership.role === "owner" || membership.role === "admin" ? (
-          <div className="flex gap-3 flex-wrap">
-            <a
-              href="/admin/branches"
-              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
-            >
-              Gerir filiais
-            </a>
-            <a
-              href="/admin/invites"
-              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
-            >
-              Convites
-            </a>
-            <a
-              href="/admin/certificates"
-              className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
-            >
-              Certificados A1
-            </a>
-          </div>
-        ) : null}
+        <div className="flex gap-3 flex-wrap">
+          <a
+            href="/nfe"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+          >
+            NF-e
+          </a>
+          {membership.role === "owner" || membership.role === "admin" ? (
+            <>
+              <a
+                href="/admin/branches"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Filiais
+              </a>
+              <a
+                href="/admin/invites"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Convites
+              </a>
+              <a
+                href="/admin/certificates"
+                className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+              >
+                Certificados A1
+              </a>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
