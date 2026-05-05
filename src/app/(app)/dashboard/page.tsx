@@ -51,6 +51,12 @@ export default async function DashboardPage() {
           >
             NF-e
           </a>
+          <a
+            href="/billing"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+          >
+            Plano e cobranca
+          </a>
           {membership.role === "owner" || membership.role === "admin" ? (
             <>
               <a
