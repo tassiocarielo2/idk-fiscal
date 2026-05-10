@@ -49,7 +49,13 @@ export default async function DashboardPage() {
             href="/nfe"
             className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
           >
-            NF-e
+            NF-e (emissão)
+          </a>
+          <a
+            href="/notas"
+            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+          >
+            Notas recebidas
           </a>
           <a
             href="/billing"
