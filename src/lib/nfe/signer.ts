@@ -94,12 +94,10 @@ function openPfx(pfxBytes: Uint8Array, password: string) {
   const asn1 = forge.asn1.fromDer(der);
   const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, false, password);
 
-  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[
-    forge.pki.oids.certBag
-  ];
-  const keyBags = p12.getBags({
-    bagType: forge.pki.oids.pkcs8ShroudedKeyBag,
-  })[forge.pki.oids.pkcs8ShroudedKeyBag];
+  const certBagOid = forge.pki.oids.certBag as string;
+  const keyBagOid = forge.pki.oids.pkcs8ShroudedKeyBag as string;
+  const certBags = p12.getBags({ bagType: certBagOid })[certBagOid];
+  const keyBags = p12.getBags({ bagType: keyBagOid })[keyBagOid];
 
   const certBag = certBags?.[0];
   const keyBag = keyBags?.[0];
@@ -115,7 +113,7 @@ function openPfx(pfxBytes: Uint8Array, password: string) {
 function extractInfNFe(xml: string): { fragment: string; idValue: string } | null {
   const re = /<infNFe\s+([^>]*?)\bId="([^"]+)"([^>]*)>([\s\S]*?)<\/infNFe>/;
   const m = xml.match(re);
-  if (!m) return null;
+  if (!m || m[2] === undefined) return null;
   // Reconstroi o fragmento completo do <infNFe ...>...</infNFe>
   const start = xml.indexOf(m[0]);
   const fragment = xml.slice(start, start + m[0].length);

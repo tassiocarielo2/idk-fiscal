@@ -70,9 +70,10 @@ export function parsePfx(
     throw new CertificateParseError("INVALID_PFX", "PFX invalido.");
   }
 
-  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
-  const bags = certBags[forge.pki.oids.certBag] ?? [];
-  const signingBag = bags.find((b) => b.cert);
+  const certBagOid = forge.pki.oids.certBag as string;
+  const certBags = p12.getBags({ bagType: certBagOid });
+  const bags = (certBags[certBagOid] ?? []) as forge.pkcs12.Bag[];
+  const signingBag = bags.find((b: forge.pkcs12.Bag) => b.cert);
   if (!signingBag || !signingBag.cert) {
     throw new CertificateParseError(
       "NO_CERT_BAG",

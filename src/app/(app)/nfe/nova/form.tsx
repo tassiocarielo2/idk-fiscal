@@ -163,8 +163,9 @@ export function NovaNFeForm({
           <Select
             value={branchId}
             onValueChange={(v) => {
-              setBranchId(v);
-              const next = certificates.filter((c) => c.branch_id === v);
+              const safe = v ?? "";
+              setBranchId(safe);
+              const next = certificates.filter((c) => c.branch_id === safe);
               setCertificateId(next[0]?.id ?? "");
             }}
           >
@@ -182,7 +183,10 @@ export function NovaNFeForm({
         </div>
         <div>
           <Label>Certificado A1</Label>
-          <Select value={certificateId} onValueChange={setCertificateId}>
+          <Select
+            value={certificateId}
+            onValueChange={(v) => setCertificateId(v ?? "")}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>

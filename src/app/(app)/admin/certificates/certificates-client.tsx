@@ -119,7 +119,7 @@ export function CertificatesClient({
         >
           <div>
             <Label htmlFor="branch">Filial</Label>
-            <Select value={branchId} onValueChange={setBranchId}>
+            <Select value={branchId} onValueChange={(v) => setBranchId(v ?? "")}>
               <SelectTrigger id="branch">
                 <SelectValue placeholder="Selecione uma filial" />
               </SelectTrigger>
@@ -135,7 +135,7 @@ export function CertificatesClient({
           </div>
           <div>
             <Label htmlFor="purpose">Proposito</Label>
-            <Select value={purpose} onValueChange={setPurpose}>
+            <Select value={purpose} onValueChange={(v) => setPurpose(v ?? "")}>
               <SelectTrigger id="purpose">
                 <SelectValue />
               </SelectTrigger>
