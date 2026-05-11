@@ -99,4 +99,56 @@ describe("detectAlerts", () => {
     const nfe = makeNfe([{ pisCst: null, cofinsCst: null }]);
     expect(detectAlerts(nfe)).toEqual([]);
   });
+
+  it("alerta cst_icms_bloqueador para CST 60 (ICMS-ST)", () => {
+    const nfe = makeNfe([
+      {
+        pisCst: "01",
+        cofinsCst: "01",
+        cfop: "5102",
+        cstCsosn: "60",
+        icmsValor: 12,
+      },
+    ]);
+    const alerts = detectAlerts(nfe);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]?.kind).toBe("cst_icms_bloqueador");
+    expect(alerts[0]?.detalhe.valor_icms).toBe(12);
+    expect(alerts[0]?.detalhe.csts).toEqual(["60"]);
+  });
+
+  it("alerta ncm_monofasico para NCM 27101259 (gasolina)", () => {
+    const nfe = makeNfe([
+      { pisCst: "01", cofinsCst: "01", ncm: "27101259", cfop: "5102" },
+    ]);
+    const alerts = detectAlerts(nfe);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]?.kind).toBe("ncm_monofasico");
+    expect(alerts[0]?.severity).toBe("warn");
+  });
+
+  it("alerta ncm_monofasico para refrigerante (NCM 22021000)", () => {
+    const nfe = makeNfe([
+      { pisCst: "01", cofinsCst: "01", ncm: "22021000", cfop: "5102" },
+    ]);
+    const alerts = detectAlerts(nfe);
+    expect(alerts.map((a) => a.kind)).toContain("ncm_monofasico");
+  });
+
+  it("alerta cfop_devolucao_entrada para CFOP 1201", () => {
+    const nfe = makeNfe([
+      { pisCst: "01", cofinsCst: "01", cfop: "1201" },
+    ]);
+    const alerts = detectAlerts(nfe);
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]?.kind).toBe("cfop_devolucao_entrada");
+    expect(alerts[0]?.severity).toBe("info");
+  });
+
+  it("NCM 73181500 (parafuso) não dispara monofásico", () => {
+    const nfe = makeNfe([
+      { pisCst: "01", cofinsCst: "01", ncm: "73181500", cfop: "5102" },
+    ]);
+    expect(detectAlerts(nfe)).toEqual([]);
+  });
 });

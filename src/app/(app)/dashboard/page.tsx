@@ -6,6 +6,8 @@ const ALERT_LABEL: Record<string, string> = {
   pis_cofins_sem_credito: "PIS/COFINS sem crédito",
   cfop_sem_credito: "CFOP sem crédito",
   cst_icms_bloqueador: "CST ICMS bloqueador",
+  ncm_monofasico: "NCM monofásico",
+  cfop_devolucao_entrada: "Devolução de venda",
   fornecedor_inativo: "Fornecedor inativo",
   duplicidade_chave: "Chave duplicada",
 };

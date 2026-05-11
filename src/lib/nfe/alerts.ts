@@ -4,6 +4,8 @@ export type AlertKind =
   | "pis_cofins_sem_credito"
   | "cfop_sem_credito"
   | "cst_icms_bloqueador"
+  | "ncm_monofasico"
+  | "cfop_devolucao_entrada"
   | "fornecedor_inativo"
   | "duplicidade_chave";
 
@@ -49,6 +51,72 @@ const CFOP_SEM_CREDITO_ENTRADA = new Set([
   "1949", "2949", // Outra entrada de mercadoria não especificada
 ]);
 
+/**
+ * CSTs de ICMS no regime normal que indicam ICMS já cobrado por ST,
+ * isenção/suspensão ou outras situações onde o destinatário não pode
+ * escriturar crédito na entrada.
+ *
+ * - 10 / 30 / 60 / 70: substituição tributária (já cobrado antes)
+ * - 40: isenta
+ * - 41: não tributada
+ * - 50: suspensão
+ * - 51: diferimento (crédito só na saída)
+ * - 90: outras (gerar revisão manual)
+ *
+ * CSOSN do Simples (102, 103, 300, 400, 500, 900) é tratado em wave futura —
+ * regra de crédito de Simples é diferente (depende de PGDAS).
+ */
+const CST_ICMS_BLOQUEADOR = new Set([
+  "10", "30", "40", "41", "50", "51", "60", "70", "90",
+]);
+
+/**
+ * NCMs sujeitos à tributação monofásica de PIS/COFINS (incidência concentrada
+ * no produtor/importador). Revendedor desses produtos não pode escriturar
+ * crédito mesmo com CST aparentemente normal — risco silencioso.
+ *
+ * Lista por prefixo de 4 dígitos (capítulo NCM). Cobertura conservadora:
+ *
+ * - 2710 — combustíveis e derivados de petróleo
+ * - 2202 — águas, refrigerantes
+ * - 2203 — cervejas de malte
+ * - 2204 / 2205 — vinhos
+ * - 2206 — outras bebidas fermentadas
+ * - 2207 / 2208 — álcool / bebidas destiladas
+ * - 3303 — perfumes
+ * - 3304 — cosméticos e maquiagem
+ * - 3305 — capilares
+ * - 3306 — higiene bucal
+ * - 3307 — barbear e desodorantes
+ * - 4011 — pneus novos
+ * - 4013 — câmaras de ar
+ * - 8702-8704 — veículos automotores
+ * - 8711 — motocicletas
+ *
+ * Fonte: Lei 10.485/2002, Lei 10.833/2003, IN RFB 2.121/2022.
+ */
+const NCM_MONOFASICO_PREFIXOS = [
+  "2710",
+  "2202", "2203", "2204", "2205", "2206", "2207", "2208",
+  "3303", "3304", "3305", "3306", "3307",
+  "4011", "4013",
+  "8702", "8703", "8704", "8711",
+];
+
+/**
+ * CFOPs de entrada que registram **devolução** de mercadoria anteriormente
+ * vendida (fluxo inverso). Não são compra — afetam apuração e exigem revisão
+ * para garantir que o ICMS estornado bate.
+ */
+const CFOP_DEVOLUCAO_ENTRADA = new Set([
+  "1201", "2201", // Devolução de venda mercado próprio/outros estados
+  "1202", "2202",
+  "1410", "2410", // Devolução de remessa simbólica
+  "1411", "2411",
+  "1503", "2503", // Devolução de mercadoria recebida em ZF
+  "1504", "2504",
+]);
+
 export function detectAlerts(nfe: ParsedNFe): DetectedAlert[] {
   const alerts: DetectedAlert[] = [];
 
@@ -83,6 +151,56 @@ export function detectAlerts(nfe: ParsedNFe): DetectedAlert[] {
     });
   }
 
+  const itensCstIcmsBloq = nfe.itens.filter(
+    (it) => it.cstCsosn && CST_ICMS_BLOQUEADOR.has(it.cstCsosn),
+  );
+  if (itensCstIcmsBloq.length > 0) {
+    alerts.push({
+      kind: "cst_icms_bloqueador",
+      severity: "warn",
+      titulo: `${itensCstIcmsBloq.length} item(ns) com CST ICMS que bloqueia crédito`,
+      detalhe: {
+        itens: itensCstIcmsBloq.map(itemSummary),
+        valor_icms: sum(itensCstIcmsBloq, (it) => it.icmsValor),
+        csts: [...new Set(itensCstIcmsBloq.map((it) => it.cstCsosn))],
+      },
+    });
+  }
+
+  const itensMonofasico = nfe.itens.filter((it) =>
+    NCM_MONOFASICO_PREFIXOS.some((p) => it.ncm.startsWith(p)),
+  );
+  if (itensMonofasico.length > 0) {
+    alerts.push({
+      kind: "ncm_monofasico",
+      severity: "warn",
+      titulo: `${itensMonofasico.length} item(ns) com NCM de tributação monofásica`,
+      detalhe: {
+        itens: itensMonofasico.map(itemSummary),
+        ncms: [...new Set(itensMonofasico.map((it) => it.ncm))],
+        nota:
+          "Revendedor de produto monofásico não escritura crédito de PIS/COFINS na entrada.",
+      },
+    });
+  }
+
+  const itensDevolucao = nfe.itens.filter((it) =>
+    CFOP_DEVOLUCAO_ENTRADA.has(it.cfop),
+  );
+  if (itensDevolucao.length > 0) {
+    alerts.push({
+      kind: "cfop_devolucao_entrada",
+      severity: "info",
+      titulo: `${itensDevolucao.length} item(ns) registrados como devolução de venda`,
+      detalhe: {
+        itens: itensDevolucao.map(itemSummary),
+        cfops: [...new Set(itensDevolucao.map((it) => it.cfop))],
+        nota:
+          "Confira se o ICMS estornado bate com o destacado na venda original.",
+      },
+    });
+  }
+
   return alerts;
 }
 
@@ -95,6 +213,7 @@ function itemSummary(it: ParsedNFeItem) {
     cfop: it.cfop,
     cst_pis: it.pisCst,
     cst_cofins: it.cofinsCst,
+    cst_icms: it.cstCsosn,
     valor_total: it.valorTotal,
   };
 }
