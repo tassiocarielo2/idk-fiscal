@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildEventXml } from "@/lib/nfe/events/builder";
-import { signNFeXml } from "@/lib/nfe/signer";
 
 export const runtime = "nodejs";
 

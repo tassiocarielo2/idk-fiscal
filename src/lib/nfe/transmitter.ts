@@ -67,7 +67,7 @@ export async function transmitNFe(input: TransmitterInput): Promise<SefazRespons
     };
   }
 
-  return parseRetorno(rawXml, input.chaveAcesso);
+  return parseRetorno(rawXml);
 }
 
 function wrapSoap(payloadXml: string, action: string): string {
@@ -85,7 +85,7 @@ function stripXmlDeclaration(xml: string): string {
   return xml.replace(/^\s*<\?xml[^?]*\?>\s*/, "");
 }
 
-function parseRetorno(rawXml: string, chave: string): SefazResponse {
+function parseRetorno(rawXml: string): SefazResponse {
   const cStat = pickTag(rawXml, "cStat") ?? "999";
   const xMotivo = pickTag(rawXml, "xMotivo") ?? "Sem retorno";
 

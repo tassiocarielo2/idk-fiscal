@@ -126,8 +126,11 @@ ${ambienteLabel ? `<div class="ambiente">${ambienteLabel}</div>` : ""}
 /**
  * Stub para conversao HTML -> PDF via Puppeteer.
  * Habilitado quando puppeteer-core + chromium estiverem instalados.
+ * Aceita DanfeData via parametro para preservar a assinatura quando o stub
+ * virar implementacao real (sera consumido pelo builder de PDF).
  */
-export async function renderDanfePdf(_data: DanfeData): Promise<Uint8Array> {
+export async function renderDanfePdf(data: DanfeData): Promise<Uint8Array> {
+  void data;
   throw new Error(
     "renderDanfePdf: nao implementado. Instale puppeteer-core + @sparticuz/chromium e descomente.",
   );
