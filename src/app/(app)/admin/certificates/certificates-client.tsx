@@ -56,6 +56,7 @@ export function CertificatesClient({
   const [pending, startTransition] = useTransition();
   const [branchId, setBranchId] = useState<string>(branches[0]?.id ?? "");
   const [purpose, setPurpose] = useState<string>("multi");
+  const [renderedAt] = useState(() => Date.now());
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -174,10 +175,9 @@ export function CertificatesClient({
           <li className="p-5 text-sm text-zinc-500">Nenhum certificado.</li>
         ) : (
           initialCertificates.map((c) => {
-            const today = Date.now();
+            const expiresAt = new Date(c.valid_until).getTime();
             const expiresIn = Math.floor(
-              (new Date(c.valid_until).getTime() - today) /
-                (1000 * 60 * 60 * 24),
+              (expiresAt - renderedAt) / (1000 * 60 * 60 * 24),
             );
             return (
               <li key={c.id} className="p-4 flex items-center justify-between gap-4">

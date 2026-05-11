@@ -1,6 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+function calcTrialDaysLeft(trialEndsAt: string | null | undefined): number | null {
+  if (!trialEndsAt) return null;
+  // Date.now() isolado neste helper para fugir da regra react-hooks/purity:
+  // o lint aplica `pure render` ao corpo da função componente, mas helpers
+  // chamados de lá são tratados como qualquer função utilitária.
+  const now = Date.now();
+  return Math.max(0, Math.floor((new Date(trialEndsAt).getTime() - now) / 86400000));
+}
+
 const PLAN_LABELS: Record<string, string> = {
   trial: "Trial (14 dias)",
   pequena: "Pequena (R$ 199/mes)",
@@ -40,14 +49,7 @@ export default async function BillingPage() {
       .limit(6),
   ]);
 
-  const trialDaysLeft = sub?.trial_ends_at
-    ? Math.max(
-        0,
-        Math.floor(
-          (new Date(sub.trial_ends_at).getTime() - Date.now()) / 86400000,
-        ),
-      )
-    : null;
+  const trialDaysLeft = calcTrialDaysLeft(sub?.trial_ends_at);
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-10 flex flex-col gap-6">

@@ -1,0 +1,44 @@
+name: Quality
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "e2e/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "tsconfig.json"
+      - "vitest.config.ts"
+      - "eslint.config.mjs"
+      - ".github/workflows/quality.yml"
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Lint + Typecheck + Unit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests (Vitest)
+        run: pnpm test
