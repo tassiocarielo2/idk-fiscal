@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import ReprocessButton from "./reprocess-button";
 
 const STATUS_LABEL: Record<string, string> = {
   autorizada: "Autorizada",
@@ -79,13 +80,15 @@ export default async function NotasPage({
 
   const { data: memberships } = await supabase
     .from("organization_members")
-    .select("organization_id")
+    .select("organization_id, role")
     .eq("user_id", user.id)
     .not("accepted_at", "is", null)
     .limit(1);
 
   const orgId = memberships?.[0]?.organization_id;
+  const role = memberships?.[0]?.role;
   if (!orgId) redirect("/onboarding");
+  const canReprocess = role === "owner" || role === "admin";
 
   let query = supabase
     .from("nfe_inbound_documents")
@@ -143,12 +146,15 @@ export default async function NotasPage({
             de PIS/COFINS automaticamente.
           </p>
         </div>
-        <Link
-          href="/notas/upload"
-          className="inline-flex items-center gap-2 rounded bg-zinc-100 text-zinc-900 px-3 py-2 text-sm font-medium hover:bg-white"
-        >
-          + Subir XMLs
-        </Link>
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href="/notas/upload"
+            className="inline-flex items-center gap-2 rounded bg-zinc-100 text-zinc-900 px-3 py-2 text-sm font-medium hover:bg-white"
+          >
+            + Subir XMLs
+          </Link>
+          {canReprocess ? <ReprocessButton organizationId={orgId} /> : null}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
