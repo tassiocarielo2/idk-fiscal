@@ -240,23 +240,28 @@ export default async function DashboardPage() {
           ) : (
             <ul className="divide-y divide-zinc-900">
               {suppliers.map((s) => (
-                <li key={s.emit_cnpj} className="py-2 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate" title={s.emit_nome}>
-                      {s.emit_nome}
+                <li key={s.emit_cnpj}>
+                  <Link
+                    href={`/notas/fornecedor/${s.emit_cnpj}`}
+                    className="py-2 flex items-center gap-3 hover:bg-zinc-950 px-2 -mx-2 rounded"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate" title={s.emit_nome}>
+                        {s.emit_nome}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {s.emit_cnpj} · {s.emit_uf} · {s.notas} notas
+                        {Number(s.notas_em_risco) > 0 ? (
+                          <span className="ml-2 text-amber-400">
+                            · {s.notas_em_risco} c/ alerta
+                          </span>
+                        ) : null}
+                      </p>
+                    </div>
+                    <p className="text-sm font-medium tabular-nums">
+                      {fmtMoney(Number(s.total_compras))}
                     </p>
-                    <p className="text-xs text-zinc-500">
-                      {s.emit_cnpj} · {s.emit_uf} · {s.notas} notas
-                      {Number(s.notas_em_risco) > 0 ? (
-                        <span className="ml-2 text-amber-400">
-                          · {s.notas_em_risco} c/ alerta
-                        </span>
-                      ) : null}
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium tabular-nums">
-                    {fmtMoney(Number(s.total_compras))}
-                  </p>
+                  </Link>
                 </li>
               ))}
             </ul>

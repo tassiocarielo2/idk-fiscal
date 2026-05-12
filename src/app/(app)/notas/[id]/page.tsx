@@ -131,6 +131,12 @@ export default async function NotaDetalhePage({
             CNPJ {doc.emit_cnpj} · {doc.emit_uf}
             {doc.emit_ie ? ` · IE ${doc.emit_ie}` : ""}
           </p>
+          <Link
+            href={`/notas/fornecedor/${doc.emit_cnpj}`}
+            className="text-xs text-emerald-400 hover:text-emerald-300 underline underline-offset-2 mt-1 inline-block"
+          >
+            Ver histórico deste fornecedor →
+          </Link>
         </div>
         <div className="flex flex-col items-end gap-2">
           <span
