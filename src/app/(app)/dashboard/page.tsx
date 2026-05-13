@@ -53,7 +53,23 @@ type AlertSummaryRow = {
   total: number;
 };
 
-export default async function DashboardPage() {
+const PERIODOS: Record<string, { months: number; label: string }> = {
+  "3m": { months: 3, label: "3 meses" },
+  "6m": { months: 6, label: "6 meses" },
+  "12m": { months: 12, label: "12 meses" },
+  "24m": { months: 24, label: "24 meses" },
+};
+
+type SearchParams = { periodo?: string };
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const sp = await searchParams;
+  const periodoKey = sp.periodo && sp.periodo in PERIODOS ? sp.periodo : "12m";
+  const periodo = PERIODOS[periodoKey]!;
   const supabase = await createClient();
   const {
     data: { user },
@@ -83,7 +99,7 @@ export default async function DashboardPage() {
   if (!orgId) redirect("/onboarding");
 
   const since = new Date();
-  since.setMonth(since.getMonth() - 11);
+  since.setMonth(since.getMonth() - (periodo.months - 1));
   since.setDate(1);
   since.setHours(0, 0, 0, 0);
 
@@ -126,7 +142,7 @@ export default async function DashboardPage() {
   const ncms = ncmsRes.data ?? [];
   const alertSummary = alertsRes.data ?? [];
 
-  const monthlySeries = build12MonthSeries(monthly, since);
+  const monthlySeries = buildMonthSeries(monthly, since, periodo.months);
   const totalNotas = monthly.reduce((acc, m) => acc + Number(m.notas), 0);
   const totalCompras = monthly.reduce(
     (acc, m) => acc + Number(m.total_compras),
@@ -177,8 +193,11 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Notas (12m)" value={fmtInt(totalNotas)} />
-        <Stat label="Compras (12m)" value={fmtMoney(totalCompras)} />
+        <Stat label={`Notas (${periodo.label})`} value={fmtInt(totalNotas)} />
+        <Stat
+          label={`Compras (${periodo.label})`}
+          value={fmtMoney(totalCompras)}
+        />
         <Stat
           label="Alertas ativos"
           value={fmtInt(totalAlertas)}
@@ -193,7 +212,28 @@ export default async function DashboardPage() {
 
       <Section
         title="Compras por mês"
-        subtitle="Soma de NF-e recebidas. Últimos 12 meses."
+        subtitle={`Soma de NF-e recebidas. Últimos ${periodo.label}.`}
+        right={
+          <form method="get" className="flex items-center gap-2">
+            <select
+              name="periodo"
+              defaultValue={periodoKey}
+              className="bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs"
+            >
+              {Object.entries(PERIODOS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="text-xs rounded border border-zinc-800 hover:bg-zinc-900 px-2 py-1"
+            >
+              Aplicar
+            </button>
+          </form>
+        }
       >
         {totalNotas === 0 ? (
           <Empty>
@@ -363,19 +403,24 @@ function Stat({
 function Section({
   title,
   subtitle,
+  right,
   children,
 }: {
   title: string;
   subtitle?: string;
+  right?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="border border-zinc-900 rounded p-5">
-      <header className="mb-2">
-        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-        {subtitle ? (
-          <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>
-        ) : null}
+      <header className="mb-2 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+          {subtitle ? (
+            <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>
+          ) : null}
+        </div>
+        {right ? <div className="shrink-0">{right}</div> : null}
       </header>
       {children}
     </section>
@@ -386,7 +431,7 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-zinc-500 py-4">{children}</p>;
 }
 
-function build12MonthSeries(rows: MonthlyRow[], since: Date) {
+function buildMonthSeries(rows: MonthlyRow[], since: Date, months: number) {
   const byKey = new Map<string, MonthlyRow>();
   for (const r of rows) {
     const d = new Date(r.mes);
@@ -402,7 +447,7 @@ function build12MonthSeries(rows: MonthlyRow[], since: Date) {
   }> = [];
 
   const cursor = new Date(since);
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < months; i++) {
     const key = monthKey(cursor);
     const row = byKey.get(key);
     series.push({
