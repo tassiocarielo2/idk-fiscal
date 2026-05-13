@@ -153,6 +153,17 @@ export default async function NotasPage({
           >
             + Subir XMLs
           </Link>
+          <a
+            href={`/api/nfe-inbound/export.csv?${new URLSearchParams({
+              periodo: periodoKey,
+              ...(statusFilter ? { status: statusFilter } : {}),
+              ...(busca ? { busca } : {}),
+              ...(onlyAlerts ? { alertas: "1" } : {}),
+            }).toString()}`}
+            className="text-xs px-3 py-1.5 rounded border border-zinc-800 hover:bg-zinc-900 hover:text-white text-zinc-300"
+          >
+            Exportar CSV
+          </a>
           {canReprocess ? <ReprocessButton organizationId={orgId} /> : null}
         </div>
       </div>
