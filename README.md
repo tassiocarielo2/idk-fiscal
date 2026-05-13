@@ -160,8 +160,18 @@ Bloqueios não-código para vender a primeiro cliente externo (Notion Sessão 8)
 | `pnpm lint` | ESLint (0 errors, 0 warnings esperado) |
 | `pnpm test` | Vitest run (unit) |
 | `pnpm test:watch` | Vitest watch |
+| `pnpm test:coverage` | Vitest com cobertura (v8 → `coverage/index.html`) |
 | `pnpm e2e` | Playwright smoke |
 | `pnpm e2e:ui` | Playwright em modo UI |
+
+### Pre-commit hook
+
+`husky` + `lint-staged` rodam `eslint --fix` nos arquivos `.ts`/`.tsx`
+staged antes de cada commit. Para instalar o hook após clone:
+
+```bash
+pnpm install   # roda "prepare": "husky" e cria .husky/_/
+```
 
 ### CI
 
